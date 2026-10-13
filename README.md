@@ -10,8 +10,6 @@ This plugin shows a native Windows toast when OpenCode needs your attention:
 - Execution failed (`session.execution.failed` / `session.error`) → error message.
 - Permission requested (`permission.asked`) → approval prompt.
 
-Deduplication: one toast per session/error/permission window (60 s for idle/error, 5 min for permissions) via `state.json`, so parallel sessions don't spam you.
-
 ## Languages
 
 Message language is detected from the system locale (`Intl.DateTimeFormat().resolvedOptions().locale`, with `LC_ALL` / `LANG` / `LANGUAGE` as fallback). Falls back to English.
@@ -80,3 +78,11 @@ Then restart OpenCode and trigger an event (finish a task, force an error, or ma
 
 - No toast appears → verify BurntToast is installed: `Get-Module -ListAvailable BurntToast`, and check Windows Settings → System → Notifications is on with Do Not Disturb off.
 - Toast shows English instead of your language → check your system locale output: `Intl.DateTimeFormat().resolvedOptions().locale` in node.
+
+## Development
+
+```sh
+npm install
+npm run lint    # biome check (lint + format check + import order)
+npm run format  # biome safe fixes + formatting
+```
