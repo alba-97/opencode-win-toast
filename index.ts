@@ -88,6 +88,27 @@ function t(): Messages {
 	return STRINGS[getLang()] ?? EN;
 }
 
+type SessionGetter = {
+	get: (args: { sessionID: string }) => Promise<unknown>;
+};
+
+async function isChildSession(
+	session: SessionGetter,
+	sessionID: string,
+): Promise<boolean> {
+	try {
+		const s = (await session.get({ sessionID })) as
+			| {
+					parentID?: unknown;
+			  }
+			| null
+			| undefined;
+		return !!s?.parentID;
+	} catch {
+		return false;
+	}
+}
+
 function claim(key: string, windowMs: number): boolean {
 	const now = Date.now();
 	const owner = Math.random().toString(36).slice(2);
@@ -148,6 +169,7 @@ export default Plugin.define({
 								type === "session.idle") &&
 							sessionID
 						) {
+							if (await isChildSession(ctx.session, sessionID)) continue;
 							if (!claim(`idle:${sessionID}`, 60_000)) continue;
 							let title = t().readyFallback;
 							try {
@@ -160,6 +182,7 @@ export default Plugin.define({
 								type === "session.error") &&
 							sessionID
 						) {
+							if (await isChildSession(ctx.session, sessionID)) continue;
 							if (!claim(`error:${sessionID}`, 60_000)) continue;
 							const errValue = data.error;
 							const msg =
@@ -173,6 +196,13 @@ export default Plugin.define({
 								String(msg ?? t().errorFallback).slice(0, 200),
 							);
 						} else if (type === "permission.asked") {
+							const permSessionID =
+								typeof data.sessionID === "string" ? data.sessionID : null;
+							if (
+								permSessionID &&
+								(await isChildSession(ctx.session, permSessionID))
+							)
+								continue;
 							const key =
 								typeof data.id === "string" ? data.id : `${Date.now()}`;
 							if (!claim(`perm:${key}`, 5 * 60_000)) continue;
